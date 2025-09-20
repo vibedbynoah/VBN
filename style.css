@@ -1,11 +1,13 @@
 :root{
-  --bg1: #0b1220;
-  --bg2: #121a2b;
-  --text: #e6e9ef;
-  --muted: #9aa4b2;
-  --card: rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.10);
-  --accent: #7dd3fc;
+  --bg1:#0b1220;
+  --bg2:#121a2b;
+  --text:#e6e9ef;
+  --muted:#9aa4b2;
+  --card:rgba(255,255,255,.04);
+  --border:rgba(255,255,255,.10);
+  --accent:#7dd3fc;          /* neon blue */
+  --accent2:#a78bfa;         /* purple */
+  --accent3:#f472b6;         /* pink */
 }
 
 *{box-sizing:border-box}
@@ -14,12 +16,42 @@ body{
   margin:0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   color:var(--text);
-  background: radial-gradient(1200px 600px at 10% 10%, var(--bg2), transparent 60%),
-              radial-gradient(1200px 600px at 90% 90%, var(--bg2), transparent 60%),
-              linear-gradient(180deg, var(--bg1), var(--bg2));
+  background:
+    radial-gradient(1200px 600px at 10% 10%, var(--bg2), transparent 60%),
+    radial-gradient(1200px 600px at 90% 90%, var(--bg2), transparent 60%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
   display:grid;
   place-items:center;
   padding:48px 20px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* ---------- Background particles (no JS) ---------- */
+.particles,
+.particles::after{
+  content:"";
+  position:absolute;
+  inset:-200px -200px;
+  pointer-events:none;
+  background:
+    radial-gradient(2px 2px at 20% 10%, rgba(125,211,252,.9) 99%, transparent),
+    radial-gradient(2px 2px at 70% 30%, rgba(167,139,250,.9) 99%, transparent),
+    radial-gradient(2px 2px at 40% 80%, rgba(244,114,182,.9) 99%, transparent),
+    radial-gradient(1.5px 1.5px at 85% 70%, rgba(125,211,252,.8) 99%, transparent),
+    radial-gradient(1.5px 1.5px at 10% 60%, rgba(167,139,250,.8) 99%, transparent);
+  animation: drift 26s linear infinite;
+  opacity:.35;
+}
+.particles::after{
+  animation-duration:36s;
+  transform:scale(1.4) rotate(5deg);
+  opacity:.25;
+}
+@keyframes drift{
+  0%{transform:translateY(0) translateX(0)}
+  50%{transform:translateY(-60px) translateX(20px)}
+  100%{transform:translateY(0) translateX(0)}
 }
 
 .container{ width:min(860px, 92vw) }
@@ -31,22 +63,41 @@ body{
   padding:56px clamp(24px, 4vw, 48px);
   backdrop-filter:saturate(120%) blur(8px);
   text-align:center;
+  position:relative;
+  z-index:1; /* above particles */
 }
 
+/* ---------- Logo pulse ---------- */
 .logo{
   display:block;
-  width:200px; 
+  width:324px;
   height:auto;
   margin:0 auto 28px auto;
-  filter: drop-shadow(0 12px 28px rgba(125,211,252,.25));
+  filter:drop-shadow(0 12px 28px rgba(125,211,252,.25));
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+@keyframes pulseGlow{
+  0%,100%{filter:drop-shadow(0 10px 24px rgba(125,211,252,.22))}
+  50%{filter:drop-shadow(0 16px 36px rgba(125,211,252,.38))}
 }
 
+/* ---------- Gradient title shimmer ---------- */
 h1{
   margin:0 0 8px 0;
-  font-size:clamp(32px, 6vw, 64px); 
+  font-size:clamp(32px, 6vw, 64px);
   line-height:1.1;
   letter-spacing:-0.02em;
   font-weight:800;
+  background: linear-gradient(90deg, var(--text), var(--accent), var(--accent2), var(--accent3), var(--text));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 8s linear infinite;
+}
+@keyframes shimmer{
+  0%{background-position:0% 50%}
+  100%{background-position:100% 50%}
 }
 
 .tagline{
@@ -70,7 +121,7 @@ h1{
 
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
   gap:16px;
 }
 
@@ -78,31 +129,46 @@ h1{
   display:block;
   text-align:left;
   padding:18px 18px 20px 18px;
-  background:rgba(255,255,255,0.03);
+  background:rgba(255,255,255,.03);
   border:1px solid var(--border);
   border-radius:16px;
   text-decoration:none;
   color:inherit;
-  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+  will-change: transform;
 }
 .card:hover{
-  transform:translateY(-3px);
-  border-color:rgba(125,211,252,.5);
-  box-shadow:0 16px 36px -18px rgba(0,0,0,.45);
+  transform:translateY(-4px) scale(1.02);
+  border-color:rgba(125,211,252,.55);
+  box-shadow:0 22px 46px -18px rgba(0,0,0,.6), 0 0 24px rgba(125,211,252,.20);
+  background:rgba(255,255,255,.05);
+  cursor:pointer;
 }
 
+/* ---------- Neon badge ---------- */
 .pill{
   display:inline-block;
   font-size:12px;
   padding:6px 10px;
   border-radius:999px;
-  border:1px dashed rgba(125,211,252,.6);
-  background:rgba(125,211,252,.10);
+  color:#001018;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  background-size: 200% 100%;
+  animation: pillFlow 6s linear infinite;
+  box-shadow: 0 0 0 1px rgba(125,211,252,.35) inset, 0 0 18px rgba(125,211,252,.25);
   margin-bottom:8px;
-  color:var(--text);
+}
+@keyframes pillFlow{
+  0%{background-position:0% 50%}
+  100%{background-position:100% 50%}
 }
 
 .card h3{ margin:6px 0 4px 0; font-size:18px }
 .card p{ margin:0; color:var(--muted); font-size:14px }
 
 .footer{ margin-top:10px; color:var(--muted); font-size:12px }
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce){
+  .logo, h1, .pill, .particles, .particles::after { animation: none }
+}
