@@ -1,35 +1,43 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vibe-Coded by Noah</title>
-<link rel="stylesheet" href="style.css" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vibe Coded by Noah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<main class="container">
-<section class="hero">
-<h1>Vibe-Coded by Noah</h1>
-<p class="tagline">Since 2025</p>
-<p class="explain">Vibe coding means creating projects with energy, creativity, and fun. It’s not just about writing code, it’s about expressing ideas in ways that inspire others. This space is here to share what I build and to encourage other kids to explore coding as a way to create cool things and share them with the world.</p>
-<nav class="nav">
-<a href="projects.html">Projects</a>
-<a href="about.html">About Vibe Coding</a>
-</nav>
-<div class="divider"></div>
-<section>
-<h2 class="sr-only">Projects</h2>
-<div class="projects">
-<a class="card" href="/igcse">
-<span class="pill">Live</span>
-<h3>IGCSE</h3>
-<p>Grade tools and utilities.</p>
-</a>
-</div>
-<p class="footer">More projects coming soon</p>
-</section>
-</section>
-</main>
+  <main class="container">
+    <section class="panel" aria-labelledby="title">
+      <h1 id="title">Vibe Coded by Noah</h1>
+      <p class="tagline">Since 2025</p>
+
+      <p class="lead">
+        Vibe coding means creating with energy and curiosity. It is about using code to express ideas that inspire others. This site shares what I build and encourages other kids to try coding and make things they care about.
+      </p>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="projects.html">Projects</a>
+        <a href="about.html">About Vibe Coding</a>
+      </nav>
+
+      <div class="hr" role="separator" aria-hidden="true"></div>
+
+      <section aria-labelledby="projects">
+        <h2 id="projects" style="position:absolute;left:-9999px">Featured project</h2>
+        <div class="grid">
+          <a class="card" href="/igcse">
+            <span class="pill">Live</span>
+            <h3>IGCSE</h3>
+            <p>Grade tools and utilities.</p>
+          </a>
+        </div>
+        <p class="footer">More projects coming soon</p>
+      </section>
+    </section>
+  </main>
 </body>
 </html>
