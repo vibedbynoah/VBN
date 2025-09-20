@@ -1,0 +1,139 @@
+:root{
+  --bg-top:#0f172a;
+  --bg-bot:#1e293b;
+  --aurora-blue:rgba(125,211,252,0.14);
+  --aurora-purple:rgba(167,139,250,0.16);
+  --aurora-pink:rgba(244,114,182,0.14);
+
+  --text:#e6e9ef;
+  --muted:#9aa4b2;
+  --card:rgba(255,255,255,.05);
+  --border:rgba(255,255,255,.12);
+
+  --accent:#7dd3fc;
+  --accent2:#a78bfa;
+  --accent3:#f472b6;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color:var(--text);
+  background:
+    radial-gradient(800px 400px at 20% 30%, var(--aurora-blue), transparent 60%),
+    radial-gradient(900px 450px at 80% 70%, var(--aurora-purple), transparent 60%),
+    radial-gradient(700px 350px at 40% 90%, var(--aurora-pink), transparent 60%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bot));
+}
+
+.page{
+  min-height:100svh;
+  display:grid;
+  place-items:center;   /* perfect vertical + horizontal centering */
+  padding:48px 20px;
+}
+
+.container{ width:min(860px, 92vw) }
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:56px clamp(24px, 4vw, 48px);
+  backdrop-filter:saturate(120%) blur(8px);
+  text-align:center;
+}
+
+/* Logo */
+.logo{
+  display:block;
+  width:324px;
+  height:auto;
+  margin:0 auto 28px auto;
+  filter:drop-shadow(0 12px 28px rgba(125,211,252,.25));
+  animation:pulseGlow 3s ease-in-out infinite;
+}
+@keyframes pulseGlow{
+  0%,100%{filter:drop-shadow(0 10px 24px rgba(125,211,252,.22))}
+  50%{filter:drop-shadow(0 16px 36px rgba(125,211,252,.38))}
+}
+
+/* Title */
+h1{
+  margin:0 0 8px 0;
+  font-size:clamp(32px, 6vw, 64px);
+  line-height:1.1;
+  font-weight:800;
+  background:linear-gradient(90deg, var(--text), var(--accent), var(--accent2), var(--accent3), var(--text));
+  background-size:300% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  animation:shimmer 8s linear infinite;
+}
+@keyframes shimmer{
+  0%{background-position:0% 50%}
+  100%{background-position:100% 50%}
+}
+
+.tagline{ margin:0 0 28px 0; font-size:clamp(16px, 2.2vw, 20px); color:var(--muted) }
+.lead{ margin:0 auto 28px auto; max-width:640px; color:var(--muted); line-height:1.6 }
+.rule{ height:1px; background:linear-gradient(90deg, transparent, var(--border), transparent); margin:28px 0 24px 0 }
+
+/* Grid of projects */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:16px;
+}
+
+/* Project card */
+.card{
+  display:block;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 18px 20px;
+  color:inherit;
+  text-decoration:none;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+}
+.card:hover{
+  transform:translateY(-4px) scale(1.02);
+  border-color:rgba(125,211,252,.55);
+  box-shadow:0 22px 46px -18px rgba(0,0,0,.6), 0 0 24px rgba(125,211,252,.20);
+  background:rgba(255,255,255,.06);
+  cursor:pointer;
+}
+
+.pill{
+  display:inline-block;
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  color:#001018;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  background-size:200% 100%;
+  animation:pillFlow 6s linear infinite;
+  box-shadow:0 0 0 1px rgba(125,211,252,.35) inset, 0 0 18px rgba(125,211,252,.25);
+  margin-bottom:10px;
+}
+@keyframes pillFlow{ 0%{background-position:0% 50%} 100%{background-position:100% 50%} }
+
+/* Title and description spacing inside card */
+.card-title{ margin:0; font-size:18px }
+.card-desc{
+  margin:8px 0 0 0;
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.55;
+}
+
+.footer{ margin-top:10px; color:var(--muted); font-size:12px }
+
+@media (prefers-reduced-motion: reduce){
+  .logo, h1, .pill { animation:none }
+}
