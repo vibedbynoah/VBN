@@ -43,7 +43,7 @@ body{
 
 h1{
   margin:0 0 8px 0;
-  font-size:clamp(32px, 6vw, 64px); /* smaller max size so it doesn’t wrap */
+  font-size:clamp(32px, 6vw, 64px); 
   line-height:1.1;
   letter-spacing:-0.02em;
   font-weight:800;
