@@ -21,5 +21,10 @@ export default defineConfig({
       input: { home: resolve(__dirname, "index.html"), ...ideaEntries }
     }
   },
-  server: { open: "/index.html" }
+  server: {
+    host: true,
+    open: false,
+    allowedHosts: [".csb.app"],
+    hmr: { clientPort: 443 }
+  }
 });
