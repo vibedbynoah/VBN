@@ -1,0 +1,79 @@
+<header>
+    <link rel="stylesheet" href="style.css">
+<script src="script.js" defer></script>
+    <img src="https://shackletonschool.com/wp-content/uploads/2025/06/logo_shacketon-VECTORIAL.png" alt="Shackleton logo">
+    <div>
+      <div style="font-weight:700">Shackleton IGCSE Training Platform</div>
+      <div class="small">Vibe Coded by Noah Rauch</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="panel">
+      <div class="row">
+        <label for="subjectSelect">Subject (required)</label>
+        <select id="subjectSelect">
+          <option value="">-- pick a subject --</option>
+          <option value="Maths">Mathematics</option>
+          <option value="English">English</option>
+          <option value="Science">Science</option>
+          <option value="History">History</option>
+        </select>
+
+        <label for="subtopicSelect">Subtopic (required)</label>
+        <select id="subtopicSelect">
+          <option value="">— choose subject first —</option>
+        </select>
+
+        <button id="loadBtn">Load 25 Questions</button>
+
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <input id="fileInput" type="file" accept=".json" title="Optional: Upload licensed JSON of questions"/>
+          <button id="shuffleBtn" class="secondary">Shuffle Session</button>
+        </div>
+      </div>
+
+      <div class="small">
+        Notes: This demo **generates** IGCSE-style questions using templates (if no licensed JSON/API is supplied). Generated questions include an <code>acceptable_answers</code> array used by the autograder. For production, replace the generator with a licensed question database / API.
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px" id="quizPanel" aria-hidden="true">
+      <div class="question-area">
+        <div class="q-icon" id="qIcon">📘</div>
+        <div class="q-body">
+          <div style="font-weight:700" id="qText">Select subject & subtopic, then press "Load 25 Questions".</div>
+          <div class="meta" id="qMeta"></div>
+
+          <div style="margin-top:10px">
+            <textarea id="answerInput" placeholder="Type your answer here (short answers work best)."></textarea>
+            <div class="controls">
+              <button id="submitAnswer">Submit Answer (acceptable answers)</button>
+              <button id="nextBtn" class="secondary">Next</button>
+              <button id="prevBtn" class="secondary">Previous</button>
+              <button id="endBtn" class="secondary">End Session</button>
+            </div>
+
+            <div class="status" id="autoGradeStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="small">Session questions: <span id="loadedCount">0</span></div>
+        <div class="small">Score (auto-graded): <span id="score">0</span> / <span id="answeredCount">0</span></div>
+        <div class="small">Elapsed: <span id="time">00:00</span></div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="resultsPanel" style="margin-top:16px">
+      <div style="font-weight:700">Session Results</div>
+      <div class="small" id="resultText"></div>
+      <div style="margin-top:10px">
+        <button id="restartBtn">Restart (same 25)</button>
+        <button id="clearBtn" class="secondary">Clear / Load New</button>
+      </div>
+    </div>
+
+    <footer>© Shackleton International School | Vibe Coded by Noah Rauch</footer>
+  </div>
