@@ -1,557 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IGCSE AI Tutor</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            color: #2f3640;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-            font-size: 2.5em;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.2s ease;
-        }
-        
-        .section:hover {
-            transform: translateY(-2px);
-        }
-        
-        .section h2 {
-            color: #2f3640;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-        
-        label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 5px;
-            color: #2f3640;
-        }
-        
-        select, input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 15px;
-            transition: border-color 0.3s ease;
-            box-sizing: border-box;
-        }
-        
-        select:focus, input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .chatbox {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 2px solid #e0e6ed;
-            padding: 15px;
-            border-radius: 12px;
-            background: #fafbfc;
-            margin-bottom: 15px;
-        }
-        
-        .message {
-            margin: 12px 0;
-            padding: 12px 16px;
-            border-radius: 12px;
-            max-width: 85%;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .user {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-        
-        .tutor {
-            background: #f8f9fa;
-            color: #2f3640;
-            margin-right: auto;
-            border: 1px solid #e9ecef;
-        }
-        
-        .error {
-            color: #e74c3c;
-            font-style: italic;
-            background: #fdf2f2;
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .questions {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-        }
-        
-        .question-item {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .question-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .question-text {
-            font-weight: 600;
-            color: #2f3640;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        
-        .multiple-choice {
-            margin: 15px 0;
-        }
-        
-        .choice {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            padding: 10px 15px;
-            margin: 8px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: block;
-        }
-        
-        .choice:hover {
-            background: #e9ecef;
-            border-color: #667eea;
-        }
-        
-        .choice.selected {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-        
-        .choice.correct {
-            background: #28a745;
-            color: white;
-            border-color: #28a745;
-        }
-        
-        .choice.incorrect {
-            background: #dc3545;
-            color: white;
-            border-color: #dc3545;
-        }
-        
-        .reveal-answer {
-            background: #17a2b8;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 12px;
-        }
-        
-        .answer-text {
-            color: #495057;
-            line-height: 1.5;
-            background: #e8f4fd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .loading {
-            text-align: center;
-            color: #667eea;
-            font-style: italic;
-        }
-        
-        .chat-input-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .chat-input-container input {
-            flex: 1;
-            margin-bottom: 0;
-        }
-        
-        .chat-input-container button {
-            width: auto;
-            min-width: 80px;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 10px;
-            }
-            
-            .section {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 2em;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IGCSE AI Tutor</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      color: #2f3640;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+      font-size: 2.5em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 25px;
+      margin-bottom: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.2s ease;
+    }
+    .section:hover { transform: translateY(-2px); }
+    .section h2 {
+      color: #2f3640;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    label { font-weight: 600; display: block; margin-bottom: 5px; color: #2f3640; }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e6ed;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 15px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    button:active { transform: translateY(0); }
+    .chatbox {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 2px solid #e0e6ed;
+      padding: 15px;
+      border-radius: 12px;
+      background: #fafbfc;
+      margin-bottom: 15px;
+    }
+    .message {
+      margin: 12px 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: 85%;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .user {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    }
+    .tutor {
+      background: #f8f9fa;
+      color: #2f3640;
+      margin-right: auto;
+      border: 1px solid #e9ecef;
+    }
+    .error {
+      color: #e74c3c;
+      font-style: italic;
+      background: #fdf2f2;
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 4px solid #e74c3c;
+    }
+    .questions {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+    }
+    .question-item {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .question-item:last-child { margin-bottom: 0; }
+    .question-text { font-weight: 600; color: #2f3640; margin-bottom: 8px; }
+    .answer-text { color: #495057; line-height: 1.5; }
+    .loading { text-align: center; color: #667eea; font-style: italic; }
+    .chat-input-container { display: flex; gap: 10px; align-items: center; }
+    .chat-input-container input { flex: 1; margin-bottom: 0; }
+    .chat-input-container button { width: auto; min-width: 80px; }
+    @media (max-width: 768px) {
+      .container { padding: 0 10px; }
+      .section { padding: 20px; }
+      h1 { font-size: 2em; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📘 IGCSE AI Tutor</h1>
+  <div class="container">
+    <h1>📘 IGCSE AI Tutor</h1>
 
-        <!-- Question Generator -->
-        <div class="section">
-            <h2>🎯 Generate Practice Questions</h2>
-            <label for="subject">Subject:</label>
-            <select id="subject">
-                <option value="Mathematics">Mathematics</option>
-                <option value="English">English Language & Literature</option>
-                <option value="Physics">Physics</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="Biology">Biology</option>
-                <option value="Geography">Geography</option>
-                <option value="History">History</option>
-                <option value="Economics">Economics</option>
-            </select>
+    <!-- Question Generator -->
+    <div class="section">
+      <h2>🎯 Generate Practice Questions</h2>
+      <label for="subject">Subject:</label>
+      <select id="subject">
+        <option value="Mathematics">Mathematics</option>
+        <option value="English">English Language & Literature</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+        <option value="Geography">Geography</option>
+        <option value="History">History</option>
+        <option value="Economics">Economics</option>
+      </select>
 
-            <label for="subtopic">Topic (optional):</label>
-            <input type="text" id="subtopic" placeholder="e.g., Quadratic equations, Photosynthesis, World War I..." />
+      <label for="subtopic">Subtopic or Chapter:</label>
+      <input type="text" id="subtopic" placeholder="e.g., Quadratic equations, Photosynthesis, World War I..." />
 
-            <button onclick="generateQuestions()">🎲 Generate Questions from Database</button>
-            <div id="questions" class="questions" style="display: none;"></div>
-        </div>
-
-        <!-- AI Tutor Chat -->
-        <div class="section">
-            <h2>💬 Ask the AI Tutor</h2>
-            <div class="chatbox" id="chatbox">
-                <div class="message tutor">
-                    👋 Hello! I'm your IGCSE AI tutor. I can help you with:
-                    <br>• Explaining difficult concepts
-                    <br>• Solving practice problems
-                    <br>• Exam preparation tips
-                    <br>• Study strategies
-                    <br><br>What would you like to learn about today?
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" id="chatInput" placeholder="Ask me anything about your IGCSE subjects..." 
-                       onkeypress="if(event.key==='Enter') sendMessage()" />
-                <button onclick="sendMessage()">Send</button>
-            </div>
-        </div>
+      <button onclick="generateQuestions()">🎲 Generate Questions</button>
+      <div id="questions" class="questions" style="display: none;"></div>
     </div>
 
-    <script>
-        // Function to shuffle array (Fisher-Yates algorithm)
-        function shuffleArray(array) {
-            const newArray = [...array];
-            for (let i = newArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-            }
-            return newArray;
+    <!-- AI Tutor Chat -->
+    <div class="section">
+      <h2>💬 Ask the AI Tutor</h2>
+      <div class="chatbox" id="chatbox">
+        <div class="message tutor">
+          👋 Hello! I'm your IGCSE AI tutor. I can help you with:
+          <br>• Explaining difficult concepts
+          <br>• Solving practice problems
+          <br>• Exam preparation tips
+          <br>• Study strategies
+          <br><br>What would you like to learn about today?
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <input type="text" id="chatInput" placeholder="Ask me anything about your IGCSE subjects..."
+               onkeypress="if(event.key==='Enter') sendMessage()" />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addChatMessage(msg, sender) {
+      const chatbox = document.getElementById("chatbox");
+      const div = document.createElement("div");
+      div.className = `message ${sender}`;
+      div.innerHTML = msg.replace(/\n/g, '<br>');
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    async function generateQuestions() {
+      const subject = document.getElementById("subject").value;
+      const subtopic = document.getElementById("subtopic").value.trim();
+      const output = document.getElementById("questions");
+
+      output.style.display = "block";
+      output.innerHTML = '<div class="loading">Loading questions from database...</div>';
+
+      try {
+        const params = new URLSearchParams({
+          subject,
+          subtopic,
+          limit: "10"
+        });
+
+        const res = await fetch(`/api/questions?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = await res.json();
+
+        if (!rows || rows.length === 0) {
+          output.innerHTML = `<div class="error">No questions found for that filter. Try a different subject or subtopic.</div>`;
+          return;
         }
 
-        // Generate questions from Cloudflare D1 database
-        async function generateQuestions() {
-            const subject = document.getElementById("subject").value;
-            const subtopic = document.getElementById("subtopic").value.trim();
-            const output = document.getElementById("questions");
-            
-            output.style.display = "block";
-            output.innerHTML = '<div class="loading">🔄 Loading questions from database...</div>';
+        const blocks = rows.map((r, idx) => {
+          const options = shuffle([r.correct, r.wrong1, r.wrong2, r.wrong3]);
+          const optionsHtml = options.map(opt => `
+            <label style="display:block;margin:6px 0;">
+              <input type="radio" name="q_${idx}" value="${opt}">
+              ${opt}
+            </label>
+          `).join("");
 
-            try {
-                // Call the Cloudflare Function
-                let url = `/api/questions?subject=${encodeURIComponent(subject)}`;
-                if (subtopic) {
-                    url += `&topic=${encodeURIComponent(subtopic)}`;
-                }
-                
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                if (!data.questions || data.questions.length === 0) {
-                    output.innerHTML = `<div class="error">No questions found for ${subject}${subtopic ? ` - ${subtopic}` : ''}. Try a different subject or topic.</div>`;
-                    return;
-                }
+          return `
+            <div class="question-item">
+              <div class="question-text">❓ <strong>Question ${idx + 1}:</strong> ${r.question}</div>
+              <div class="answer-text">
+                <div style="margin:8px 0 12px; font-size: 0.95em; color:#6b7280;">
+                  Topic: ${r.topic}
+                </div>
+                ${optionsHtml}
+                <button onclick="revealAnswer(${idx}, ${JSON.stringify(r.correct).replace(/"/g, '&quot;')})" style="margin-top:10px;">Reveal answer</button>
+                <div id="ans_${idx}" style="margin-top:10px; display:none; color:#065f46; background:#ecfdf5; padding:10px; border-radius:8px;">
+                  ✅ Correct answer: <strong>${r.correct}</strong>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
 
-                // Create the HTML output with multiple choice
-                let topicInfo = subtopic ? 
-                    `<div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-                        <strong>📖 Subject:</strong> ${subject}<br>
-                        <strong>🎯 Topic:</strong> ${subtopic}<br>
-                        <strong>📊 Questions found:</strong> ${data.questions.length}
-                    </div>` : 
-                    `<div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-                        <strong>📖 Subject:</strong> ${subject}<br>
-                        <strong>📊 Questions found:</strong> ${data.questions.length}
-                    </div>`;
+        output.innerHTML = `
+          <div style="background:#e8f4fd;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid #667eea;">
+            <strong>📖 Loaded from database:</strong> ${subject}${subtopic ? " • " + subtopic : ""}
+          </div>
+          ${blocks}
+          <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; text-align: center; color: #1e40af;">
+            <strong>Tip:</strong> Try answering before you reveal. Active recall boosts memory.
+          </div>
+        `;
+      } catch (err) {
+        output.innerHTML = `<div class="error">Failed to load questions. ${err.message}</div>`;
+      }
+    }
 
-                output.innerHTML = topicInfo + data.questions.map((q, index) => {
-                    // Create array of all answer choices
-                    const allChoices = [
-                        { text: q.correct_answer, isCorrect: true },
-                        { text: q.wrong_answer_1, isCorrect: false },
-                        { text: q.wrong_answer_2, isCorrect: false },
-                        { text: q.wrong_answer_3, isCorrect: false }
-                    ];
-                    
-                    // Shuffle the choices randomly
-                    const shuffledChoices = shuffleArray(allChoices);
-                    
-                    return `
-                        <div class="question-item">
-                            <div class="question-text">❓ <strong>Question ${index + 1}:</strong> ${q.question}</div>
-                            <div class="multiple-choice">
-                                ${shuffledChoices.map((choice, choiceIndex) => 
-                                    `<div class="choice" onclick="selectChoice(${index}, ${choiceIndex}, ${choice.isCorrect})" data-question="${index}" data-choice="${choiceIndex}">
-                                        <strong>${String.fromCharCode(65 + choiceIndex)}.</strong> ${choice.text}
-                                    </div>`
-                                ).join('')}
-                            </div>
-                            <button class="reveal-answer" onclick="revealAnswer(${index})" id="reveal-btn-${index}">Show Correct Answer</button>
-                            <div class="answer-text" id="answer-${index}" style="display: none;">
-                                ✅ <strong>Correct Answer:</strong> ${q.correct_answer}
-                            </div>
-                        </div>`;
-                }).join("") + 
-                `<div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; text-align: center; color: #1e40af;">
-                    <strong>💡 Study Tip:</strong> Try answering each question before revealing the correct answer. This helps with active recall!
-                </div>`;
-                
-            } catch (error) {
-                console.error('Error generating questions:', error);
-                output.innerHTML = `<div class="error">❌ Error loading questions: ${error.message}<br><br>
-                    Make sure your Cloudflare D1 database is properly configured and contains data.</div>`;
-            }
-        }
+    function revealAnswer(idx) {
+      const el = document.getElementById(`ans_${idx}`);
+      if (el) el.style.display = "block";
+    }
 
-        // Handle choice selection
-        function selectChoice(questionIndex, choiceIndex, isCorrect) {
-            // Remove previous selections for this question
-            const questionChoices = document.querySelectorAll(`[data-question="${questionIndex}"]`);
-            questionChoices.forEach(choice => {
-                choice.classList.remove('selected', 'correct', 'incorrect');
-            });
-            
-            // Mark the selected choice
-            const selectedChoice = document.querySelector(`[data-question="${questionIndex}"][data-choice="${choiceIndex}"]`);
-            selectedChoice.classList.add('selected');
-            
-            // Show if it's correct or incorrect after a short delay
-            setTimeout(() => {
-                if (isCorrect) {
-                    selectedChoice.classList.remove('selected');
-                    selectedChoice.classList.add('correct');
-                    
-                    // Show a success message
-                    const successMsg = document.createElement('div');
-                    successMsg.innerHTML = '🎉 Correct! Well done!';
-                    successMsg.style.cssText = 'background: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 14px;';
-                    selectedChoice.parentNode.appendChild(successMsg);
-                    
-                    // Auto-reveal answer after correct selection
-                    setTimeout(() => revealAnswer(questionIndex), 1000);
-                } else {
-                    selectedChoice.classList.remove('selected');
-                    selectedChoice.classList.add('incorrect');
-                    
-                    // Highlight the correct answer
-                    questionChoices.forEach(choice => {
-                        // Find the choice with the correct answer
-                        const choiceText = choice.textContent.substring(3); // Remove "A. ", "B. ", etc.
-                        const correctAnswer = document.getElementById(`answer-${questionIndex}`).textContent.replace('✅ Correct Answer: ', '');
-                        if (choiceText === correctAnswer) {
-                            choice.classList.add('correct');
-                        }
-                    });
-                    
-                    // Show an encouragement message
-                    const encourageMsg = document.createElement('div');
-                    encourageMsg.innerHTML = '💪 Good try! The correct answer is highlighted in green.';
-                    encourageMsg.style.cssText = 'background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 14px;';
-                    selectedChoice.parentNode.appendChild(encourageMsg);
-                    
-                    // Auto-reveal answer after incorrect selection
-                    setTimeout(() => revealAnswer(questionIndex), 1500);
-                }
-            }, 300);
-        }
+    function generateTutorResponse(userMessage) {
+      return "Great question. What topic do you want to focus on?";
+    }
 
-        // Reveal the correct answer
-        function revealAnswer(questionIndex) {
-            const answerDiv = document.getElementById(`answer-${questionIndex}`);
-            const revealBtn = document.getElementById(`reveal-btn-${questionIndex}`);
-            
-            if (answerDiv.style.display === 'none') {
-                answerDiv.style.display = 'block';
-                revealBtn.textContent = 'Hide Answer';
-                revealBtn.style.background = '#6c757d';
-            } else {
-                answerDiv.style.display = 'none';
-                revealBtn.textContent = 'Show Correct Answer';
-                revealBtn.style.background = '#17a2b8';
-            }
-        }
+    async function sendMessage() {
+      const chatInput = document.getElementById("chatInput");
+      const message = chatInput.value.trim();
+      if (!message) return;
 
-        // Chat functionality (keeping the original tutor responses)
-        function addChatMessage(msg, sender) {
-            const chatbox = document.getElementById("chatbox");
-            const div = document.createElement("div");
-            div.className = `message ${sender}`;
-            div.innerHTML = msg.replace(/\n/g, '<br>');
-            chatbox.appendChild(div);
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
+      addChatMessage(message, "user");
+      chatInput.value = "";
 
-        function generateTutorResponse(userMessage) {
-            const message = userMessage.toLowerCase();
-            
-            // Math responses
-            if (message.includes("quadratic") || (message.includes("solve") && message.includes("equation"))) {
-                return "For quadratic equations, remember the standard form ax² + bx + c = 0. You can solve using:\n\n🔢 **Methods:**\n• **Factoring** - Look for two numbers that multiply to 'c' and add to 'b'\n• **Quadratic formula** - x = (-b ± √(b²-4ac))/2a\n• **Completing the square** - Useful for finding vertex form\n\n**Example:** x² - 5x + 6 = 0\nFactoring: (x-2)(x-3) = 0, so x = 2 or x = 3\n\nWhich method would you like me to explain step-by-step?";
-            }
-            
-            if (message.includes("algebra") || message.includes("simplify")) {
-                return "Algebra is all about working with variables! Here are key steps:\n\n📝 **Simplifying expressions:**\n• Combine like terms (3x + 2x = 5x)\n• Use distributive property: a(b + c) = ab + ac\n• Follow BODMAS/PEMDAS order\n\n**Example:** 3(2x + 4) - 2(x - 1)\n= 6x + 12 - 2x + 2\n= 4x + 14\n\nWhat specific algebra problem are you working on?";
-            }
-            
-            // Physics responses  
-            if (message.includes("physics") || message.includes("force") || message.includes("motion")) {
-                return "Physics is fascinating! Let's break down motion and forces:\n\n⚡ **Key equations:**\n• **v = u + at** (final velocity)\n• **s = ut + ½at²** (displacement)\n• **F = ma** (Newton's 2nd law)\n• **W = Fd** (work done)\n\n**Remember:** Always identify what you're given and what you need to find. Draw diagrams when possible!\n\n**Example:** A car accelerates from rest at 2 m/s² for 5s\nUsing v = u + at: v = 0 + 2(5) = 10 m/s\n\nWhat physics problem are you stuck on?";
-            }
-            
-            // Default encouraging response
-            const encouragingStarts = [
-                "Great question! 🤔",
-                "I'd love to help with that! ✨",
-                "Let's explore this together! 🚀",
-                "That's an interesting topic! 💡",
-                "I'm excited to help you learn! 📚"
-            ];
-            
-            const randomStart = encouragingStarts[Math.floor(Math.random() * encouragingStarts.length)];
-            return randomStart + " Could you be more specific about what you'd like to learn?\n\n**I can help with:**\n• Mathematics (algebra, geometry, calculus)\n• Physics (motion, electricity, waves)\n• Chemistry (atoms, bonding, reactions)\n• Biology (cells, photosynthesis, genetics)\n• English (grammar, essays, literature)\n\n**Or try asking:**\n• 'Explain quadratic equations'\n• 'Help me with physics motion problems'\n• 'How do I write a good essay?'\n• 'What is photosynthesis?'\n\nWhat subject interests you most today?";
-        }
+      addChatMessage("Thinking...", "tutor");
+      setTimeout(() => {
+        const chatbox = document.getElementById("chatbox");
+        chatbox.removeChild(chatbox.lastElementChild);
+        const response = generateTutorResponse(message);
+        addChatMessage(response, "tutor");
+      }, 800);
+    }
 
-        async function sendMessage() {
-            const chatInput = document.getElementById("chatInput");
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            addChatMessage(message, "user");
-            chatInput.value = "";
-
-            // Show typing indicator
-            addChatMessage("🤔 Thinking...", "tutor");
-            
-            // Simulate thinking delay
-            setTimeout(() => {
-                // Remove thinking message
-                const chatbox = document.getElementById("chatbox");
-                chatbox.removeChild(chatbox.lastElementChild);
-                
-                // Add actual response
-                const response = generateTutorResponse(message);
-                addChatMessage(response, "tutor");
-            }, 1000);
-        }
-
-        // Initialize with a random tip
-        const tips = [
-            "💡 Tip: Practice a little bit every day rather than cramming before exams!",
-            "💡 Tip: Make flashcards for key formulas and concepts!",
-            "💡 Tip: Explain concepts out loud to test your understanding!",
-            "💡 Tip: Use past papers to identify your weak areas!",
-            "💡 Tip: Create mind maps to visualize connections between topics!"
-        ];
-        
-        setTimeout(() => {
-            const randomTip = tips[Math.floor(Math.random() * tips.length)];
-            addChatMessage(randomTip, "tutor");
-        }, 3000);
-    </script>
+    const tips = [
+      "Tip: Practice a little bit every day rather than cramming before exams!",
+      "Tip: Make flashcards for key formulas and concepts!",
+      "Tip: Explain concepts out loud to test your understanding!",
+      "Tip: Use past papers to identify your weak areas!",
+      "Tip: Create mind maps to visualize connections between topics!"
+    ];
+    setTimeout(() => {
+      const randomTip = tips[Math.floor(Math.random() * tips.length)];
+      addChatMessage(randomTip, "tutor");
+    }, 3000);
+  </script>
 </body>
 </html>
