@@ -153,10 +153,10 @@
         
         .question-item {
             background: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .question-item:last-child {
@@ -166,12 +166,67 @@
         .question-text {
             font-weight: 600;
             color: #2f3640;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .multiple-choice {
+            margin: 15px 0;
+        }
+        
+        .choice {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+        }
+        
+        .choice:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .choice.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .choice.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .choice.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .reveal-answer {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 12px;
         }
         
         .answer-text {
             color: #495057;
             line-height: 1.5;
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
         }
         
         .loading {
@@ -220,7 +275,7 @@
             <h2>🎯 Generate Practice Questions</h2>
             <label for="subject">Subject:</label>
             <select id="subject">
-                <option value="Math">Mathematics</option>
+                <option value="Mathematics">Mathematics</option>
                 <option value="English">English Language & Literature</option>
                 <option value="Physics">Physics</option>
                 <option value="Chemistry">Chemistry</option>
@@ -230,10 +285,10 @@
                 <option value="Economics">Economics</option>
             </select>
 
-            <label for="subtopic">Subtopic or Chapter:</label>
+            <label for="subtopic">Topic (optional):</label>
             <input type="text" id="subtopic" placeholder="e.g., Quadratic equations, Photosynthesis, World War I..." />
 
-            <button onclick="generateQuestions()">🎲 Generate Questions</button>
+            <button onclick="generateQuestions()">🎲 Generate Questions from Database</button>
             <div id="questions" class="questions" style="display: none;"></div>
         </div>
 
@@ -259,241 +314,169 @@
     </div>
 
     <script>
-        // Since we can't use external APIs in Claude artifacts, we'll simulate the AI responses
-        
-        const sampleQuestions = {
-            "Mathematics": {
-                "quadratic": [
-                    {
-                        question: "Solve the quadratic equation: x² - 5x + 6 = 0",
-                        answer: "Using factoring: (x-2)(x-3) = 0, so x = 2 or x = 3. We can verify by substituting back into the original equation."
-                    },
-                    {
-                        question: "Find the vertex of the parabola y = 2x² - 8x + 3",
-                        answer: "Using the vertex formula x = -b/2a: x = 8/4 = 2. Substituting: y = 2(4) - 8(2) + 3 = -5. Vertex is at (2, -5)."
-                    }
-                ],
-                "algebra": [
-                    {
-                        question: "Simplify: 3(2x + 4) - 2(x - 1)",
-                        answer: "3(2x + 4) - 2(x - 1) = 6x + 12 - 2x + 2 = 4x + 14"
-                    },
-                    {
-                        question: "Solve for x: 2x - 7 = 3x + 1",
-                        answer: "2x - 7 = 3x + 1 → -7 - 1 = 3x - 2x → -8 = x, so x = -8"
-                    }
-                ],
-                "geometry": [
-                    {
-                        question: "Find the area of a circle with radius 5 cm",
-                        answer: "Area = πr² = π × 5² = 25π ≈ 78.54 cm²"
-                    },
-                    {
-                        question: "Calculate the volume of a cylinder with radius 3 cm and height 8 cm",
-                        answer: "Volume = πr²h = π × 3² × 8 = 72π ≈ 226.19 cm³"
-                    }
-                ]
-            },
-            "Physics": {
-                "motion": [
-                    {
-                        question: "A car accelerates from rest at 2 m/s² for 5 seconds. What is its final velocity?",
-                        answer: "Using v = u + at where u = 0, a = 2 m/s², t = 5s: v = 0 + 2(5) = 10 m/s"
-                    },
-                    {
-                        question: "Calculate the gravitational potential energy of a 2 kg object at height 10 m (g = 9.8 m/s²)",
-                        answer: "PE = mgh = 2 × 9.8 × 10 = 196 J"
-                    }
-                ],
-                "electricity": [
-                    {
-                        question: "Calculate current when 12V is applied across a 4Ω resistor",
-                        answer: "Using Ohm's law V = IR: I = V/R = 12/4 = 3 A"
-                    },
-                    {
-                        question: "Find the total resistance of two 6Ω resistors connected in parallel",
-                        answer: "For parallel resistors: 1/R = 1/R₁ + 1/R₂ = 1/6 + 1/6 = 2/6 = 1/3, so R = 3Ω"
-                    }
-                ],
-                "waves": [
-                    {
-                        question: "A wave has frequency 50 Hz and wavelength 2 m. Find its speed.",
-                        answer: "Using v = fλ: v = 50 × 2 = 100 m/s"
-                    },
-                    {
-                        question: "What happens when light travels from air into glass?",
-                        answer: "Speed decreases (due to higher refractive index), wavelength decreases, but frequency remains constant."
-                    }
-                ]
-            },
-            "Chemistry": {
-                "atoms": [
-                    {
-                        question: "How many protons, neutrons and electrons does ¹²C have?",
-                        answer: "Carbon-12 has 6 protons (atomic number), 6 neutrons (12-6), and 6 electrons (neutral atom)"
-                    },
-                    {
-                        question: "Write the electron configuration of oxygen (atomic number 8)",
-                        answer: "Oxygen: 1s² 2s² 2p⁴ or [He] 2s² 2p⁴"
-                    }
-                ],
-                "bonding": [
-                    {
-                        question: "Explain why NaCl has a high melting point",
-                        answer: "NaCl has ionic bonding with strong electrostatic forces between Na⁺ and Cl⁻ ions, requiring significant energy to overcome"
-                    },
-                    {
-                        question: "Predict the shape of methane (CH₄) using VSEPR theory",
-                        answer: "CH₄ has 4 bonding pairs and 0 lone pairs around carbon, giving a tetrahedral shape with bond angles of 109.5°"
-                    }
-                ],
-                "reactions": [
-                    {
-                        question: "Balance: Na + H₂O → NaOH + H₂",
-                        answer: "2Na + 2H₂O → 2NaOH + H₂"
-                    },
-                    {
-                        question: "What type of reaction is: CaCO₃ → CaO + CO₂?",
-                        answer: "This is a thermal decomposition reaction - one compound breaks down into two or more products when heated."
-                    }
-                ]
-            },
-            "Biology": {
-                "cells": [
-                    {
-                        question: "What are the main differences between plant and animal cells?",
-                        answer: "Plant cells have: cell wall, chloroplasts, large vacuole. Animal cells have: centrioles, lysosomes, smaller vacuoles."
-                    },
-                    {
-                        question: "Describe the function of mitochondria",
-                        answer: "Mitochondria produce ATP through cellular respiration. They're the 'powerhouses' of the cell, converting glucose and oxygen into energy."
-                    }
-                ],
-                "photosynthesis": [
-                    {
-                        question: "Write the word equation for photosynthesis",
-                        answer: "Carbon dioxide + Water → Glucose + Oxygen (in the presence of light and chlorophyll)"
-                    },
-                    {
-                        question: "Why are leaves green?",
-                        answer: "Leaves contain chlorophyll which absorbs red and blue light but reflects green light, making them appear green."
-                    }
-                ]
-            },
-            "English Language & Literature": {
-                "grammar": [
-                    {
-                        question: "What is the difference between 'affect' and 'effect'?",
-                        answer: "'Affect' is usually a verb (to influence), 'effect' is usually a noun (a result). Memory tip: Affect = Action, Effect = End result."
-                    },
-                    {
-                        question: "Identify the literary device: 'The wind whispered through the trees'",
-                        answer: "This is personification - giving human characteristics (whispering) to non-human things (wind)."
-                    }
-                ],
-                "writing": [
-                    {
-                        question: "How do you structure a persuasive essay?",
-                        answer: "1. Introduction with clear thesis, 2. Body paragraphs with evidence and examples, 3. Address counterarguments, 4. Strong conclusion that reinforces your position."
-                    },
-                    {
-                        question: "What makes a good opening paragraph?",
-                        answer: "A hook to grab attention, background information, and a clear thesis statement that previews your main arguments."
-                    }
-                ]
+        // Function to shuffle array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
             }
-        };
+            return newArray;
+        }
 
-        const tutorResponses = [
-            "I'd be happy to help you with that! Let me break this down step by step...",
-            "That's a great question! Here's how I would approach this problem...",
-            "Let me explain this concept clearly with an example...",
-            "This is an important topic in IGCSE. Here's what you need to know...",
-            "I can see why this might be confusing. Let me clarify...",
-            "Good question! This often comes up in exams. Here's the key..."
-        ];
-
-        function generateQuestions() {
+        // Generate questions from Cloudflare D1 database
+        async function generateQuestions() {
             const subject = document.getElementById("subject").value;
-            const subtopic = document.getElementById("subtopic").value.trim().toLowerCase();
+            const subtopic = document.getElementById("subtopic").value.trim();
             const output = document.getElementById("questions");
             
             output.style.display = "block";
-            output.innerHTML = '<div class="loading">🔄 Generating IGCSE practice questions...</div>';
+            output.innerHTML = '<div class="loading">🔄 Loading questions from database...</div>';
 
-            // Simulate API delay for realism
-            setTimeout(() => {
-                let questions = [];
-                let matchedTopic = "";
-                
-                // Search for matching questions in the database
-                if (sampleQuestions[subject]) {
-                    // Try to find exact or partial matches
-                    for (let topic in sampleQuestions[subject]) {
-                        if (subtopic === "" || 
-                            subtopic.includes(topic) || 
-                            topic.includes(subtopic) ||
-                            topic.toLowerCase().includes(subtopic) ||
-                            subtopic.includes(topic.toLowerCase())) {
-                            questions = [...sampleQuestions[subject][topic]];
-                            matchedTopic = topic;
-                            break;
-                        }
-                    }
-                    
-                    // If no specific match, combine questions from all topics
-                    if (questions.length === 0 && subtopic === "") {
-                        const allTopics = Object.keys(sampleQuestions[subject]);
-                        // Get 2 questions from random topics
-                        for (let i = 0; i < Math.min(2, allTopics.length); i++) {
-                            const randomTopic = allTopics[Math.floor(Math.random() * allTopics.length)];
-                            questions.push(...sampleQuestions[subject][randomTopic].slice(0, 1));
-                        }
-                        matchedTopic = "various topics";
-                    }
-                    
-                    // If still no questions, use the first available topic
-                    if (questions.length === 0) {
-                        const firstTopic = Object.keys(sampleQuestions[subject])[0];
-                        questions = sampleQuestions[subject][firstTopic];
-                        matchedTopic = firstTopic;
-                    }
+            try {
+                // Call the Cloudflare Function
+                let url = `/api/questions?subject=${encodeURIComponent(subject)}`;
+                if (subtopic) {
+                    url += `&topic=${encodeURIComponent(subtopic)}`;
                 }
                 
-                // Generate fallback questions if no specific ones found
-                if (questions.length === 0) {
-                    questions = [
-                        {
-                            question: `Describe the key concepts in ${subtopic || subject.toLowerCase()}`,
-                            answer: `The main concepts include fundamental principles, problem-solving techniques, and practical applications. For ${subject}, focus on understanding core theories, practicing calculations, and connecting concepts to real-world examples.`
-                        },
-                        {
-                            question: `How should I prepare for the ${subject} IGCSE exam${subtopic ? ` on ${subtopic}` : ''}?`,
-                            answer: `Effective preparation includes: creating a study timetable, practicing past papers, understanding mark schemes, making summary notes, and identifying weak areas. Focus on understanding concepts rather than just memorizing facts.`
-                        }
-                    ];
-                    matchedTopic = "general study advice";
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.questions || data.questions.length === 0) {
+                    output.innerHTML = `<div class="error">No questions found for ${subject}${subtopic ? ` - ${subtopic}` : ''}. Try a different subject or topic.</div>`;
+                    return;
                 }
 
-                // Create the HTML output
-                let topicInfo = matchedTopic !== "various topics" && matchedTopic !== "general study advice" ? 
+                // Create the HTML output with multiple choice
+                let topicInfo = subtopic ? 
                     `<div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-                        <strong>📖 Topic:</strong> ${subject} - ${matchedTopic.charAt(0).toUpperCase() + matchedTopic.slice(1)}
-                    </div>` : '';
+                        <strong>📖 Subject:</strong> ${subject}<br>
+                        <strong>🎯 Topic:</strong> ${subtopic}<br>
+                        <strong>📊 Questions found:</strong> ${data.questions.length}
+                    </div>` : 
+                    `<div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea;">
+                        <strong>📖 Subject:</strong> ${subject}<br>
+                        <strong>📊 Questions found:</strong> ${data.questions.length}
+                    </div>`;
 
-                output.innerHTML = topicInfo + questions.map((q, index) => 
-                    `<div class="question-item">
-                        <div class="question-text">❓ <strong>Question ${index + 1}:</strong> ${q.question}</div>
-                        <div class="answer-text">✅ <strong>Answer:</strong> ${q.answer}</div>
-                    </div>`
-                ).join("") + 
+                output.innerHTML = topicInfo + data.questions.map((q, index) => {
+                    // Create array of all answer choices
+                    const allChoices = [
+                        { text: q.correct_answer, isCorrect: true },
+                        { text: q.wrong_answer_1, isCorrect: false },
+                        { text: q.wrong_answer_2, isCorrect: false },
+                        { text: q.wrong_answer_3, isCorrect: false }
+                    ];
+                    
+                    // Shuffle the choices randomly
+                    const shuffledChoices = shuffleArray(allChoices);
+                    
+                    return `
+                        <div class="question-item">
+                            <div class="question-text">❓ <strong>Question ${index + 1}:</strong> ${q.question}</div>
+                            <div class="multiple-choice">
+                                ${shuffledChoices.map((choice, choiceIndex) => 
+                                    `<div class="choice" onclick="selectChoice(${index}, ${choiceIndex}, ${choice.isCorrect})" data-question="${index}" data-choice="${choiceIndex}">
+                                        <strong>${String.fromCharCode(65 + choiceIndex)}.</strong> ${choice.text}
+                                    </div>`
+                                ).join('')}
+                            </div>
+                            <button class="reveal-answer" onclick="revealAnswer(${index})" id="reveal-btn-${index}">Show Correct Answer</button>
+                            <div class="answer-text" id="answer-${index}" style="display: none;">
+                                ✅ <strong>Correct Answer:</strong> ${q.correct_answer}
+                            </div>
+                        </div>`;
+                }).join("") + 
                 `<div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; text-align: center; color: #1e40af;">
-                    <strong>💡 Study Tip:</strong> Try solving these questions first before looking at the answers. This helps with active recall!
+                    <strong>💡 Study Tip:</strong> Try answering each question before revealing the correct answer. This helps with active recall!
                 </div>`;
                 
-            }, 800); // Reduced delay for better UX
+            } catch (error) {
+                console.error('Error generating questions:', error);
+                output.innerHTML = `<div class="error">❌ Error loading questions: ${error.message}<br><br>
+                    Make sure your Cloudflare D1 database is properly configured and contains data.</div>`;
+            }
         }
 
+        // Handle choice selection
+        function selectChoice(questionIndex, choiceIndex, isCorrect) {
+            // Remove previous selections for this question
+            const questionChoices = document.querySelectorAll(`[data-question="${questionIndex}"]`);
+            questionChoices.forEach(choice => {
+                choice.classList.remove('selected', 'correct', 'incorrect');
+            });
+            
+            // Mark the selected choice
+            const selectedChoice = document.querySelector(`[data-question="${questionIndex}"][data-choice="${choiceIndex}"]`);
+            selectedChoice.classList.add('selected');
+            
+            // Show if it's correct or incorrect after a short delay
+            setTimeout(() => {
+                if (isCorrect) {
+                    selectedChoice.classList.remove('selected');
+                    selectedChoice.classList.add('correct');
+                    
+                    // Show a success message
+                    const successMsg = document.createElement('div');
+                    successMsg.innerHTML = '🎉 Correct! Well done!';
+                    successMsg.style.cssText = 'background: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 14px;';
+                    selectedChoice.parentNode.appendChild(successMsg);
+                    
+                    // Auto-reveal answer after correct selection
+                    setTimeout(() => revealAnswer(questionIndex), 1000);
+                } else {
+                    selectedChoice.classList.remove('selected');
+                    selectedChoice.classList.add('incorrect');
+                    
+                    // Highlight the correct answer
+                    questionChoices.forEach(choice => {
+                        // Find the choice with the correct answer
+                        const choiceText = choice.textContent.substring(3); // Remove "A. ", "B. ", etc.
+                        const correctAnswer = document.getElementById(`answer-${questionIndex}`).textContent.replace('✅ Correct Answer: ', '');
+                        if (choiceText === correctAnswer) {
+                            choice.classList.add('correct');
+                        }
+                    });
+                    
+                    // Show an encouragement message
+                    const encourageMsg = document.createElement('div');
+                    encourageMsg.innerHTML = '💪 Good try! The correct answer is highlighted in green.';
+                    encourageMsg.style.cssText = 'background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 14px;';
+                    selectedChoice.parentNode.appendChild(encourageMsg);
+                    
+                    // Auto-reveal answer after incorrect selection
+                    setTimeout(() => revealAnswer(questionIndex), 1500);
+                }
+            }, 300);
+        }
+
+        // Reveal the correct answer
+        function revealAnswer(questionIndex) {
+            const answerDiv = document.getElementById(`answer-${questionIndex}`);
+            const revealBtn = document.getElementById(`reveal-btn-${questionIndex}`);
+            
+            if (answerDiv.style.display === 'none') {
+                answerDiv.style.display = 'block';
+                revealBtn.textContent = 'Hide Answer';
+                revealBtn.style.background = '#6c757d';
+            } else {
+                answerDiv.style.display = 'none';
+                revealBtn.textContent = 'Show Correct Answer';
+                revealBtn.style.background = '#17a2b8';
+            }
+        }
+
+        // Chat functionality (keeping the original tutor responses)
         function addChatMessage(msg, sender) {
             const chatbox = document.getElementById("chatbox");
             const div = document.createElement("div");
@@ -520,50 +503,7 @@
                 return "Physics is fascinating! Let's break down motion and forces:\n\n⚡ **Key equations:**\n• **v = u + at** (final velocity)\n• **s = ut + ½at²** (displacement)\n• **F = ma** (Newton's 2nd law)\n• **W = Fd** (work done)\n\n**Remember:** Always identify what you're given and what you need to find. Draw diagrams when possible!\n\n**Example:** A car accelerates from rest at 2 m/s² for 5s\nUsing v = u + at: v = 0 + 2(5) = 10 m/s\n\nWhat physics problem are you stuck on?";
             }
             
-            if (message.includes("electricity") || message.includes("current") || message.includes("voltage")) {
-                return "Electricity follows predictable patterns! 🔌\n\n**Ohm's Law:** V = IR\n• V = Voltage (Volts)\n• I = Current (Amps) \n• R = Resistance (Ohms)\n\n**Series circuits:** Same current, voltages add up\n**Parallel circuits:** Same voltage, currents add up\n\n**Example:** 12V across 4Ω resistor\nI = V/R = 12/4 = 3A\n\nNeed help with a specific electricity problem?";
-            }
-            
-            // Chemistry responses
-            if (message.includes("chemistry") || message.includes("atom") || message.includes("element")) {
-                return "Chemistry is like building with atoms! 🧪\n\n**Atomic structure:**\n• **Protons** - positive charge, in nucleus\n• **Neutrons** - no charge, in nucleus  \n• **Electrons** - negative charge, in shells\n\n**Key concepts:**\n• Atomic number = number of protons\n• Mass number = protons + neutrons\n• Electron configuration follows shell rules\n\n**Example:** Carbon-12 (¹²C)\n• 6 protons, 6 neutrons, 6 electrons\n• Electron config: 1s² 2s² 2p²\n\nWhat chemistry topic shall we explore?";
-            }
-            
-            if (message.includes("bonding") || message.includes("ionic") || message.includes("covalent")) {
-                return "Chemical bonding explains how atoms stick together! 🔗\n\n**Types of bonding:**\n• **Ionic** - metal + non-metal, electrons transferred\n• **Covalent** - non-metals sharing electrons\n• **Metallic** - sea of electrons around metal atoms\n\n**Properties:**\n• Ionic: high melting points, conduct when dissolved\n• Covalent: lower melting points, don't conduct\n• Metallic: conduct electricity, malleable\n\n**Example:** NaCl (ionic)\nNa loses 1 electron → Na⁺\nCl gains 1 electron → Cl⁻\nStrong attraction = high melting point\n\nWhich bonding type interests you most?";
-            }
-            
-            // Biology responses
-            if (message.includes("biology") || message.includes("cell") || message.includes("photosynthesis")) {
-                return "Biology is the study of life! 🌱\n\n**Cell basics:**\n• **Plant cells:** cell wall, chloroplasts, large vacuole\n• **Animal cells:** centrioles, lysosomes, small vacuoles\n• **Both have:** nucleus, mitochondria, cytoplasm\n\n**Photosynthesis equation:**\nCO₂ + H₂O → C₆H₁₂O₆ + O₂\n(with light + chlorophyll)\n\n**Why leaves are green:** Chlorophyll absorbs red/blue light but reflects green!\n\nWhat biology topic would you like to explore?";
-            }
-            
-            // English responses
-            if (message.includes("english") || message.includes("grammar") || message.includes("essay")) {
-                return "English skills are essential for all subjects! 📚\n\n**Common confusions:**\n• **Affect vs Effect:** Affect = verb (to influence), Effect = noun (result)\n• **There/Their/They're:** There = place, Their = possession, They're = they are\n\n**Essay structure:**\n1. **Introduction:** Hook + background + thesis\n2. **Body paragraphs:** Topic sentence + evidence + analysis\n3. **Conclusion:** Restate thesis + summarize + final thought\n\n**Literary devices:**\n• Metaphor, simile, personification, alliteration\n\nWhat aspect of English are you working on?";
-            }
-            
-            // Study skills and exam prep
-            if (message.includes("exam") || message.includes("test") || message.includes("prepare") || message.includes("study")) {
-                return "Excellent study strategies for IGCSE success! 📖\n\n**Before studying:**\n• Create a realistic timetable\n• Find a quiet, comfortable space\n• Gather all materials needed\n\n**While studying:**\n• Use active recall (test yourself)\n• Make summary notes\n• Practice past papers\n• Take regular breaks (Pomodoro technique)\n\n**Exam day tips:**\n• Read questions carefully\n• Plan your time\n• Show all working in math/science\n• Check answers if time permits\n\n**Command words to know:**\n• Describe = give details\n• Explain = give reasons why\n• Compare = similarities and differences\n• Evaluate = judge importance/success\n\nWhat subject exam are you preparing for?";
-            }
-            
-            // Math specific topics
-            if (message.includes("geometry") || message.includes("area") || message.includes("volume")) {
-                return "Geometry is about shapes, space, and measurement! 📐\n\n**Area formulas:**\n• Rectangle: length × width\n• Circle: πr²\n• Triangle: ½ × base × height\n\n**Volume formulas:**\n• Cube: side³\n• Cylinder: πr²h\n• Sphere: (4/3)πr³\n\n**Circle facts:**\n• Circumference = 2πr\n• π ≈ 3.14159\n\n**Example:** Circle with radius 5cm\nArea = π × 5² = 25π ≈ 78.54 cm²\n\nWhat geometry problem are you working on?";
-            }
-            
-            // General help and encouragement
-            if (message.includes("help") || message.includes("explain") || message.includes("understand") || message.includes("confused")) {
-                return "I'm here to help you succeed! 🌟\n\n**I can assist with:**\n• Breaking down complex concepts\n• Step-by-step problem solving\n• Exam preparation strategies\n• Study techniques that work\n• Subject-specific tips\n\n**Remember:**\n• Every expert was once a beginner\n• Mistakes are part of learning\n• Practice makes progress (not perfection!)\n• Ask questions - that's how you grow!\n\n**My specialties:**\n• Mathematics (algebra, geometry, statistics)\n• Sciences (Physics, Chemistry, Biology)\n• English (grammar, essay writing, literature)\n\nWhat specific topic or question do you have? Be as detailed as you like!";
-            }
-            
-            // Motivation and encouragement
-            if (message.includes("difficult") || message.includes("hard") || message.includes("struggling") || message.includes("can't")) {
-                return "I understand it feels challenging right now, but you've got this! 💪\n\n**When something feels difficult:**\n• Break it into smaller steps\n• Start with what you DO know\n• Practice similar but easier problems first\n• Don't be afraid to ask for help\n\n**Growth mindset reminders:**\n• 'I can't do this YET'\n• 'Mistakes help me learn'\n• 'Effort builds ability'\n• 'Challenges make me stronger'\n\n**Study strategies that help:**\n• Use visual aids (diagrams, mind maps)\n• Explain concepts out loud\n• Find real-world connections\n• Study with friends\n\n**Remember:** Every IGCSE student finds some topics challenging - that's completely normal! The key is persistence and the right approach.\n\nWhat specific topic is giving you trouble? Let's tackle it together!";
-            }
-            
-            // Default response with more personality
+            // Default encouraging response
             const encouragingStarts = [
                 "Great question! 🤔",
                 "I'd love to help with that! ✨",
