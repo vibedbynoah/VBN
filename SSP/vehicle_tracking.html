@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Tracking Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
+    <style>
+        html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+        .fa-truck-icon { background: transparent !important; border: none !important; }
+        .truck-wrap { position: relative; }
+        .truck-label {
+          position: absolute;
+          bottom: 38px;   /* was 26px, moved higher to give more clearance */
+          left: 50%;
+          transform: translateX(-50%);
+          font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+          color: #111;
+          background: rgba(255,255,255,0.95);
+          padding: 3px 8px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          box-shadow: 0 0 2px rgba(0,0,0,0.35);
+        }
+        .truck-rot {
+          transform-origin: 50% 50%;
+          text-align: center;
+        }
+        .truck-rot i {
+          font-size: 26px;
+          text-shadow: 0 0 2px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.45);
+          display: block;
+        }
+        #timeSlider { direction: rtl; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <input type="range" id="timeSlider" min="0" max="0" value="0" step="1" style="position:absolute;bottom:10px;left:10px;width:300px;z-index:1000;">
+    <div id="timeLabel" style="position: absolute; bottom: 42px; left: 10px; padding: 4px 8px; background: rgba(255,255,255,0.9); border-radius: 6px; font: 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial; z-index: 1000;">Time: Live</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+    <script src="https://unpkg.com/esri-leaflet@3.0.19/dist/esri-leaflet.js" crossorigin></script>
+    <script src="https://unpkg.com/esri-leaflet-stream@1.1.0/dist/esri-leaflet-stream.min.js" crossorigin></script>
+    <script>
+        // Requires Leaflet, Esri Leaflet, Esri Leaflet Stream, and a <div id="map"></div>
+
+        ////////////////////////
+        // Map and basemap
+        ////////////////////////
+        const map = L.map('map').setView([40.586909, -111.928711], 13);
+        L.esri.basemapLayer('Imagery').addTo(map);
+
+        ////////////////////////
+        // Assets and styles
+        ////////////////////////
+        (function injectAssets() {
+          if (!document.querySelector('link[href*="font-awesome"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css';
+            link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+          }
+        if (!document.getElementById('truck-style')) {
+          const style = document.createElement('style');
+          style.id = 'truck-style';
+          style.textContent = `
+            .fa-truck-icon { background: transparent !important; border: none !important; }
+            .truck-wrap { position: relative; }
+            .truck-label {
+              position: absolute;
+              bottom: 38px;   /* was 26px, moved higher to give more clearance */
+              left: 50%;
+              transform: translateX(-50%);
+              font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+              color: #111;
+              background: rgba(255,255,255,0.95);
+              padding: 3px 8px;
+              border-radius: 6px;
+              white-space: nowrap;
+              pointer-events: none;
+              box-shadow: 0 0 2px rgba(0,0,0,0.35);
+            }
+            .truck-rot {
+              transform-origin: 50% 50%;
+              text-align: center;
+            }
+            .truck-rot i {
+              font-size: 26px;
+              text-shadow: 0 0 2px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.45);
+              display: block;
+            }
+            #timeSlider { direction: rtl; }
+          `;
+          document.head.appendChild(style);
+        }
+        })();
+
+        ////////////////////////
+        // UI: slider and label
+        ////////////////////////
+        let slider = document.getElementById('timeSlider');
+        if (!slider) {
+          slider = document.createElement('input');
+          slider.type = 'range';
+          slider.id = 'timeSlider';
+          slider.min = '0';  // age model: 0 = Live (right side because of direction: rtl)
+          slider.max = '0';
+          slider.value = '0';
+          slider.step = '1';
+          Object.assign(slider.style, { position: 'absolute', bottom: '10px', left: '10px', width: '420px', zIndex: 1000 });
+          document.body.appendChild(slider);
+        }
+        let timeLabel = document.getElementById('timeLabel');
+        if (!timeLabel) {
+          timeLabel = document.createElement('div');
+          timeLabel.id = 'timeLabel';
+          Object.assign(timeLabel.style, {
+            position: 'absolute', bottom: '42px', left: '10px',
+            padding: '4px 8px', background: 'rgba(255,255,255,0.9)',
+            borderRadius: '6px', font: '14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial',
+            zIndex: 1000
+          });
+          timeLabel.textContent = 'Time: Live';
+          document.body.appendChild(timeLabel);
+        }
+
+        ////////////////////////
+        // Helpers
+        ////////////////////////
+        const streamUrl = 'https://realtimegis2016.esri.com:6443/arcgis/rest/services/SandyVehicles/StreamServer';
+
+        const history = [];  // { id, name, lat, lng, ts, heading, speed, vehType, color, props }
+        const liveLayerGroup = L.layerGroup().addTo(map);
+        const histLayer = L.layerGroup().addTo(map);
+
+        const colorMap = new Map();
+        function hslToHex(h, s, l){ s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+          const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+          const toHex=x=>Math.round(255*x).toString(16).padStart(2,'0');
+          return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;}
+        function hashString(str){ let h=2166136261>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619)>>>0;} return h>>>0; }
+        function colorForId(id){ if(colorMap.has(id)) return colorMap.get(id); const c=hslToHex(hashString(String(id))%360,85,52); colorMap.set(id,c); return c; }
+
+        function getTruckId(p){
+          const c=['vehiclename','vehicle_id','VEHICLE_ID','id','Unit','Name','OBJECTID','OBJECTID_1'];
+          for (const k of c) if (p && p[k] != null) return String(p[k]);
+          return 'veh-'+hashString(JSON.stringify(p||{}));
+        }
+        function getTruckName(p){ return p?.vehiclename ? String(p.vehiclename) : ''; }
+        function parseEpochMs(v){ if(v==null) return Date.now(); if(typeof v==='number') return v; const n=Number(v); if(!Number.isNaN(n)) return n; const d=new Date(v); return isNaN(d.getTime())?Date.now():d.getTime(); }
+        function fmt(ts){ try{return new Date(ts).toLocaleString();}catch{return String(ts);} }
+        // Esri heading clockwise from North. FA icon faces East. Rotate by heading - 90.
+        function cssDeg(h){ const n=Number(h); if(!Number.isFinite(n)) return 0; return (n-90+360)%360; }
+
+        // Icons by vehicletype using FA Free names
+        function faClassForType(t){
+          const s = String(t||'').toLowerCase().trim();
+          if (s === 'pickup') return 'fa-truck-pickup';
+          if (s === 'snow plow' || s === 'snowplow') return 'fa-snowplow';
+          return 'fa-truck';
+        }
+
+        // Build divIcon HTML
+        function iconHTML(name, color, deg, vehType){
+          const safe = name ? name.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])) : '';
+          const klass = faClassForType(vehType);
+          return `
+            <div class="truck-wrap">
+              <div class="truck-label">${safe}</div>
+              <div class="truck-rot" style="transform:rotate(${deg}deg)">
+                <i class="fa-solid ${klass}" style="color:${color}"></i>
+              </div>
+            </div>`;
+        }
+        function makeIcon(name, color, deg, vehType){
+          return L.divIcon({
+            html: iconHTML(name, color, deg, vehType),
+            className: 'fa-truck-icon',
+            iconSize: [30, 40],
+            iconAnchor: [15, 30]
+          });
+        }
+
+        ////////////////////////
+        // Live rendering via pointToLayer to ensure markers appear
+        ////////////////////////
+        const liveLayer = L.esri.streamFeatureLayer({
+          url: streamUrl,
+          pointToLayer: function (geojson, latlng) {
+            const p = geojson?.properties || {};
+            const id = getTruckId(p);
+            const name = getTruckName(p);
+            const vehType = p?.vehicletype || '';
+            const color = colorForId(id);
+            const deg = cssDeg(p.heading);
+            const m = L.marker(latlng, { icon: makeIcon(name, color, deg, vehType) });
+            const popup = [
+              name ? `<div><b>vehiclename</b>: ${name}</div>` : '',
+              vehType ? `<div><b>vehicletype</b>: ${vehType}</div>` : '',
+              Number.isFinite(p.speed) ? `<div><b>speed</b>: ${p.speed}</div>` : '',
+              Number.isFinite(p.heading) ? `<div><b>heading</b>: ${p.heading}</div>` : '',
+              p.time ? `<div><b>time</b>: ${fmt(parseEpochMs(p.time))}</div>` : ''
+            ].filter(Boolean).join('');
+            if (popup) m.bindPopup(popup);
+            return m;
+          }
+        }).addTo(map);
+
+        ////////////////////////
+        // Session history for scrubbing
+        ////////////////////////
+        liveLayer.on('featurecreate', e => {
+          let lat, lng;
+          const g = e.feature?.geometry;
+          if (g?.type === 'Point' && Array.isArray(g.coordinates)) {
+            [lng, lat] = g.coordinates;
+          } else {
+            const px = Number(e.feature?.properties?.point_x);
+            const py = Number(e.feature?.properties?.point_y);
+            if (Number.isFinite(px) && Number.isFinite(py)) { lng = px; lat = py; } else { return; }
+          }
+
+          const p = e.feature?.properties || {};
+          const id = getTruckId(p);
+          const name = getTruckName(p);
+          const vehType = p?.vehicletype || '';
+          const color = colorForId(id);
+          const ts = parseEpochMs(p.time);
+          const heading = Number(p.heading);
+          const speed = Number(p.speed);
+
+          history.push({ id, name, lat, lng, ts, heading, speed, vehType, color, props: p });
+          if (history.length > 20000) history.shift();
+
+          // Keep slider at Live on the right using age model
+          slider.min = '0';
+          slider.max = String(Math.max(0, history.length - 1));
+          slider.value = '0';
+          timeLabel.textContent = `Time: ${fmt(ts)} (Live)`;
+        });
+
+        ////////////////////////
+        // Historical playback
+        ////////////////////////
+        slider.addEventListener('input', () => {
+          // age-based slider: 0 = live. value N means N steps back.
+          const age = parseInt(slider.value, 10) || 0;
+          const latest = history.length - 1;
+          const idx = Math.max(0, latest - age);
+
+          histLayer.clearLayers();
+
+          if (age === 0) {
+            if (!map.hasLayer(liveLayer)) liveLayer.addTo(map);
+            timeLabel.textContent = history.length ? `Time: ${fmt(history[latest].ts)} (Live)` : 'Time: Live';
+            return;
+          }
+
+          if (map.hasLayer(liveLayer)) map.removeLayer(liveLayer);
+
+          const lastById = new Map();
+          for (let i = 0; i <= idx; i++) {
+            const h = history[i];
+            if (h) lastById.set(h.id, h);
+          }
+
+          lastById.forEach(h => {
+            const m = L.marker([h.lat, h.lng], { icon: makeIcon(h.name, h.color, cssDeg(h.heading), h.vehType) }).addTo(histLayer);
+          });
+
+          timeLabel.textContent = history[idx] ? `Time: ${fmt(history[idx].ts)}` : 'Time: —';
+        });
+
+        // Initialize UI
+        timeLabel.textContent = 'Time: Live';
+    </script>
+</body>
+</html>
