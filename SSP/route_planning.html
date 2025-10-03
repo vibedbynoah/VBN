@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaflet Route Planner</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+  <style>
+    :root{
+      --bg-card: rgba(255,255,255,0.86);
+      --primary: #4ea686;         /* keep your green family */
+      --primary-ink: #fff;
+      --ink: #636363;             /* requested dark text */
+      --subtle: #7b7b7b;
+      --ring: rgba(78,166,134,0.35);
+      --border: #e5e7eb;
+        --finish: #e04f5f;
+      --start:  #2e9e77;
+    }
+
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #000; color: var(--ink); font-size: 16px; }
+    #app { position: relative; height: 100%; width: 100%; }
+    #map { position: absolute; inset: 0; }
+
+    /* Hide default Leaflet UI including LRM's panel */
+    .leaflet-control-zoom,
+    .leaflet-control-attribution,
+    .leaflet-routing-container,
+    .leaflet-routing-collapse-btn { display: none !important; }
+
+    /* Floating card */
+    #overlay{
+      position: absolute; inset: 16px auto auto 16px;
+      width: 520px; max-width: calc(100% - 32px);
+      background: var(--bg-card);
+      backdrop-filter: saturate(140%) blur(3px);
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+      padding: 18px;
+      z-index: 1000;
+      box-sizing: border-box;
+    }
+
+    .card-head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .title{ font-weight: 700; letter-spacing: .2px; }
+    .chips{ display:flex; gap:6px; }
+    .chip{ background: var(--chip); color: var(--subtle); font-size: 12.5px; padding: 6px 10px; border-radius: 999px; }
+
+    .group{ display:grid; grid-template-columns: 60px 1fr; column-gap: 10px; row-gap: 6px; margin-bottom: 12px; align-items: center; }
+    .field-label{ font-size: 12.5px; color: var(--subtle); padding-left: 4px; }
+
+    .ac-wrap{ position: relative; }
+    #overlay input[type="text"]{
+      padding: 13px 14px; font-size: 15.5px; border-radius: 14px; border: 1px solid var(--border); width: 100%;
+      background: #fff; box-sizing: border-box; outline: none;
+      transition: box-shadow .15s, border-color .15s;
+      color: var(--ink);
+    }
+    #overlay input[type="text"]:focus{
+      border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring);
+    }
+
+    .pick{ grid-column: 2; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; margin-top: 6px; color: var(--subtle); }
+
+    .ac-list{ position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--border); border-top:none; z-index:1001; max-height:220px; overflow:auto; box-shadow:0 10px 24px rgba(0,0,0,0.08); border-radius: 12px; }
+    .ac-item{ padding:10px 12px; font-size:15px; cursor:pointer; }
+    .ac-item:hover, .ac-item.ac-active{ background:#f4f6f8; }
+
+    .row{ display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+
+    .btn{
+      appearance:none; border:1px solid var(--border); background:#fff; color:var(--ink);
+      padding:12px 16px; border-radius: 999px; font-size:15px; cursor:pointer;
+      transition: transform .06s ease, background .15s, border-color .15s;
+      user-select:none; display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn:hover{ background:#f7f9fb; }
+    .btn:active{ transform: translateY(1px); }
+    .btn[aria-pressed="true"]{ border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring); }
+
+    .btn.primary{ background: var(--primary); color: var(--primary-ink); border-color: transparent; }
+    .btn.primary:hover{ filter: brightness(1.04); }
+
+    #status{ font-size: 12.5px; color: var(--subtle); min-height: 18px; margin-top: 6px; }
+
+    /* Font Awesome pin markers */
+    .fa-pin{
+      font-size: 28px; line-height: 1; color: var(--start);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .fa-pin.finish{ color: var(--finish); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="map"></div>
+
+    <aside id="overlay">
+      <div class="card-head">
+        <div class="title">Route Planner</div>
+        <div class="chips">
+          <span class="chip"><i class="fa-solid fa-hand-pointer"></i> Drag route to adjust</span>
+          <span class="chip"><i class="fa-solid fa-plus"></i> Click Detour to add a stop</span>
+        </div>
+      </div>
+
+      <div class="group">
+        <span class="field-label">Start</span>
+        <div class="ac-wrap"><input id="from" type="text" placeholder="Address" autocomplete="off"></div>
+        <label class="pick"><input type="checkbox" id="pickStart"> Pick on map</label>
+      </div>
+
+      <div class="group">
+        <span class="field-label">Finish</span>
+        <div class="ac-wrap"><input id="to" type="text" placeholder="Address" autocomplete="off"></div>
+        <label class="pick"><input type="checkbox" id="pickFinish"> Pick on map</label>
+      </div>
+
+      <div class="row" style="margin-top:4px">
+        <button id="go" class="btn primary" title="Create route">
+          <i class="fa-solid fa-route"></i><span>Route</span>
+        </button>
+
+        <button id="detour" class="btn" aria-pressed="false" title="Add a waypoint by clicking the map">
+          <i class="fa-solid fa-plus"></i><span>Detour</span>
+        </button>
+
+        <button id="undoWp" class="btn" title="Remove last waypoint">
+          <i class="fa-solid fa-rotate-left"></i><span>Undo stop</span>
+        </button>
+
+        <button id="saveRoute" class="btn" title="Save route as polyline">
+          <i class="fa-regular fa-bookmark"></i><span>Save</span>
+        </button>
+
+        <button id="clearAll" class="btn" title="Remove route, markers, and saved lines">
+          <i class="fa-solid fa-broom"></i><span>Clear map</span>
+        </button>
+      </div>
+
+      <div id="status"></div>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+  <script>
+    // State
+    let fromPoint = null;
+    let toPoint = null;
+    let pickingStart = false;
+    let pickingFinish = false;
+    let detourMode = false;
+    let lastRouteCoords = null;
+
+    const map = L.map('map', { zoomControl: false });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '' }).addTo(map);
+    map.setView([39.4702, -0.3768], 13);
+
+    const markers = L.layerGroup().addTo(map);
+    const savedRoutes = L.layerGroup().addTo(map);
+
+    const router = L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' });
+const lrm = L.Routing.control({
+  waypoints: [],
+  router,
+  routeWhileDragging: true,
+  draggableWaypoints: true,
+  addWaypoints: true,
+  show: false,
+  fitSelectedRoutes: false,
+  lineOptions: {
+    styles: [{ opacity: 0.9, weight: 6, color: '#ffd84d' }] // yellow line
+  },
+  createMarker: () => null  // suppress default markers
+}).addTo(map);
+
+    lrm.on('routesfound', (e) => {
+      const r = e.routes[0];
+      lastRouteCoords = r.coordinates;
+      const dist = r.summary.totalDistance;
+      const time = r.summary.totalTime;
+      setStatus(`Distance ${fmtDistance(dist)} • Time ${fmtDuration(time)}`);
+      const line = L.polyline(lastRouteCoords);
+      map.fitBounds(line.getBounds().pad(0.2));
+    });
+
+    // Autocomplete
+    makeAutocomplete('from');
+    makeAutocomplete('to');
+
+    // Pick on map
+    const pickStartEl = document.getElementById('pickStart');
+    const pickFinishEl = document.getElementById('pickFinish');
+
+    pickStartEl.addEventListener('change', (e) => {
+      if (e.target.checked) { pickingStart = true; pickingFinish = false; pickFinishEl.checked = false; }
+      else { pickingStart = false; }
+      updatePickCursor();
+    });
+
+    pickFinishEl.addEventListener('change', (e) => {
+      if (e.target.checked) { pickingFinish = true; pickingStart = false; pickStartEl.checked = false; }
+      else { pickingFinish = false; }
+      updatePickCursor();
+    });
+
+    function updatePickCursor(){
+      const any = pickingStart || pickingFinish || detourMode;
+      map.getContainer().style.cursor = any ? 'crosshair' : '';
+      if (detourMode) setStatus('Click on the map to add a detour stop');
+      else setStatus(any ? 'Click on the map to set the selected point' : '');
+    }
+
+    map.on('click', async (e) => {
+      const { lat, lng } = e.latlng;
+
+      // Detour mode: insert a waypoint before the final one
+      if (detourMode && lrm.getWaypoints().length >= 2) {
+        const wps = lrm.getWaypoints();
+        const insertIndex = Math.max(1, wps.length - 1);
+        lrm.spliceWaypoints(insertIndex, 0, L.latLng(lat, lng));
+        setStatus('Added stop. Drag markers to refine');
+        setDetour(false); // one-shot
+        return;
+      }
+
+      if (!pickingStart && !pickingFinish) return;
+
+      const label = await reverseGeocode(lat, lng, true);
+      if (pickingStart) {
+        setFrom({ lat, lon: lng, label });
+        pickingStart = false; pickStartEl.checked = false;
+      } else if (pickingFinish) {
+        setTo({ lat, lon: lng, label });
+        pickingFinish = false; pickFinishEl.checked = false;
+      }
+      updatePickCursor();
+    });
+
+    // Buttons
+    document.getElementById('go').addEventListener('click', routeFromState);
+
+    document.getElementById('detour').addEventListener('click', () => setDetour(!detourMode));
+    function setDetour(on){
+      detourMode = on;
+      document.getElementById('detour').setAttribute('aria-pressed', String(on));
+      updatePickCursor();
+    }
+
+    document.getElementById('undoWp').addEventListener('click', () => {
+      const wps = lrm.getWaypoints();
+      if (wps.length <= 2) { setStatus('No extra stops'); return; }
+      lrm.spliceWaypoints(wps.length - 2, 1, null);
+      setStatus('Removed last stop');
+    });
+
+    document.getElementById('saveRoute').addEventListener('click', () => {
+      if (!lastRouteCoords || !lastRouteCoords.length) { setStatus('No route to save'); return; }
+      const name = prompt('Name this route');
+      const line = L.polyline(lastRouteCoords, { weight: 4, opacity: 0.9 }).addTo(savedRoutes);
+      if (name) line.bindPopup(`<b>${name}</b>`);
+      line._savedName = name || '';
+      setStatus('Route saved');
+    });
+
+    document.getElementById('clearAll').addEventListener('click', clearAll);
+
+    // Helpers
+    function clearAll(){
+      lrm.setWaypoints([]);
+      markers.clearLayers();
+      savedRoutes.clearLayers();
+      fromPoint = null; toPoint = null; lastRouteCoords = null;
+      document.getElementById('from').value = '';
+      document.getElementById('to').value = '';
+      pickStartEl.checked = false; pickFinishEl.checked = false;
+      setDetour(false);
+      setStatus('');
+    }
+
+    function faDivIcon(cls){
+      return L.divIcon({
+        className: '',
+        html: `<i class="fa-solid fa-location-dot fa-pin ${cls}"></i>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28]
+      });
+    }
+
+    function setFrom(p){
+      fromPoint = p;
+      placeMarker('Start', p.lat, p.lon, p.label);
+      const el = document.getElementById('from');
+      if (el){ el.value = p.label; el.dataset.lat = p.lat; el.dataset.lon = p.lon; }
+    }
+    function setTo(p){
+      toPoint = p;
+      placeMarker('Finish', p.lat, p.lon, p.label);
+      const el = document.getElementById('to');
+      if (el){ el.value = p.label; el.dataset.lat = p.lat; el.dataset.lon = p.lon; }
+    }
+    function placeMarker(title, lat, lon, label){
+      if (!placeMarker.refs) placeMarker.refs = { Start: null, Finish: null };
+      if (placeMarker.refs[title]) { map.removeLayer(placeMarker.refs[title]); }
+      const cls = title === 'Start' ? '' : 'finish';
+      placeMarker.refs[title] = L.marker([lat, lon], { icon: faDivIcon(cls) })
+        .bindPopup(`<b>${title}</b><br>${label || ''}`).addTo(markers);
+    }
+
+    function fmtDistance(m){ return m >= 1000 ? `${(m/1000).toFixed(1)} km` : `${Math.round(m)} m`; }
+    function fmtDuration(s){ const m = Math.round(s/60); return m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; }
+    function setStatus(html){ document.getElementById('status').innerHTML = html; }
+
+    async function routeFromState(){
+      try {
+        setStatus('Preparing route');
+        const a = await ensurePoint('from');
+        const b = await ensurePoint('to');
+        setFrom(a); setTo(b);
+        lrm.setWaypoints([ L.latLng(a.lat, a.lon), L.latLng(b.lat, b.lon) ]);
+      } catch(err){ setStatus(err.message || 'Routing failed'); }
+    }
+    async function ensurePoint(which){
+      if (which === 'from' && fromPoint) return fromPoint;
+      if (which === 'to' && toPoint) return toPoint;
+      const el = document.getElementById(which);
+      if (el?.value){
+        const g = await geocodeOne(el.value, true);
+        if (which === 'from'){ setFrom(g); return g; }
+        setTo(g); return g;
+      }
+      throw new Error('Pick locations or enter addresses');
+    }
+
+    function minimalLabel(addr){
+      if (!addr || typeof addr !== 'object') return '';
+      const street = [addr.house_number, addr.road].filter(Boolean).join(' ');
+      const city = addr.city || addr.town || addr.village || addr.hamlet || addr.municipality || addr.locality;
+      const state = addr.state || addr.state_code;
+      return [street || null, city || null, state || null].filter(Boolean).join(', ');
+    }
+
+    const qs = (obj) => new URLSearchParams(obj).toString();
+
+    async function geocodeOne(q, minimal=false){
+      const url = `https://nominatim.openstreetmap.org/search?${qs({ q, format:'jsonv2', addressdetails:1, limit:1 })}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Geocoding failed');
+      const data = await res.json();
+      if (!data.length) throw new Error('No results');
+      const d = data[0];
+      const label = minimal ? minimalLabel(d.address) : d.display_name;
+      return { lat: parseFloat(d.lat), lon: parseFloat(d.lon), label };
+    }
+
+    async function geocodeSuggest(q){
+      const url = `https://nominatim.openstreetmap.org/search?${qs({ q, format:'jsonv2', addressdetails:1, limit:5 })}`;
+      const res = await fetch(url); if (!res.ok) return [];
+      const data = await res.json();
+      return data.map(d => ({
+        label: minimalLabel(d.address),
+        lat: parseFloat(d.lat),
+        lon: parseFloat(d.lon)
+      })).filter(it => it.label);
+    }
+
+    async function reverseGeocode(lat, lon, minimal=false){
+      const url = `https://nominatim.openstreetmap.org/reverse?${qs({ lat, lon, format:'jsonv2', addressdetails:1 })}`;
+      const r = await fetch(url); if (!r.ok) return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      const j = await r.json();
+      if (minimal && j.address) {
+        const mini = minimalLabel(j.address);
+        return mini || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      }
+      return j.display_name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+
+    // Debounced autocomplete (faster)
+    function makeAutocomplete(id){
+      const wrap = document.querySelector(`#${id}`).parentElement;
+      const input = document.getElementById(id);
+      const list = document.createElement('div');
+      list.className = 'ac-list'; list.style.display = 'none';
+      wrap.appendChild(list);
+
+      let items = []; let active = -1; let timer; let lastQuery = '';
+
+      function fetchSuggestions(){
+        const q = input.value.trim();
+        lastQuery = q;
+        if (q.length < 3) { list.style.display = 'none'; return; }
+        geocodeSuggest(q).then(sugs => {
+          if (lastQuery !== q) return;
+          items = sugs;
+          list.innerHTML = items.map((it, i) => `<div class="ac-item" data-i="${i}">${escapeHtml(it.label)}</div>`).join('');
+          list.style.display = items.length ? 'block' : 'none';
+          active = -1;
+        }).catch(() => { list.style.display = 'none'; });
+      }
+
+      input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(fetchSuggestions, 250); });
+
+      input.addEventListener('keydown', (e) => {
+        const elems = Array.from(list.querySelectorAll('.ac-item'));
+        if (e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(active + 1, elems.length - 1); highlight(); }
+        else if (e.key === 'ArrowUp'){ e.preventDefault(); active = Math.max(active - 1, 0); highlight(); }
+        else if (e.key === 'Enter'){
+          if (active >= 0 && items[active]){ e.preventDefault(); choose(active); }
+          else if (id === 'to') routeFromState();
+        }
+        function highlight(){ elems.forEach((el, i) => el.classList.toggle('ac-active', i === active)); }
+      });
+
+      list.addEventListener('click', (e) => {
+        const el = e.target.closest('.ac-item'); if (!el) return;
+        choose(parseInt(el.dataset.i, 10));
+      });
+
+      document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) list.style.display = 'none'; });
+
+      function choose(i){
+        const it = items[i]; if (!it) return;
+        input.value = it.label; input.dataset.lat = it.lat; input.dataset.lon = it.lon;
+        list.style.display = 'none';
+        if (id === 'from') setFrom({ lat: it.lat, lon: it.lon, label: it.label });
+        if (id === 'to')   setTo({ lat: it.lat, lon: it.lon, label: it.label });
+      }
+    }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  </script>
+</body>
+</html>
